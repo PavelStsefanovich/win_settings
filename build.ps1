@@ -1,3 +1,7 @@
+param(
+    [switch] $package
+)
+
 $ErrorActionPreference = 'Stop'
 $app_name = 'WinSettingsShortcuts'
 
@@ -38,20 +42,22 @@ try {
     Write-Host "[EXECUTING] '$pyinstaller_cmd'" -ForegroundColor Gray
     Invoke-Expression $pyinstaller_cmd
 
-	& deactivate
-
+    & deactivate
 
     # package
-    Write-Host "`n:: Packaging..." -ForegroundColor Gray
-    mkdir ".\dist\$app_name" | Out-Null
-    foreach ($item in @("dist\$app_name`.exe", 'assets', 'README.md', 'install.ps1', 'uninstall.ps1')) {
-        (Get-Item $item).FullName | ForEach-Object { Copy-Item $_ ".\dist\$($app_name)" -Force -Recurse }
+    if ( $package ) {
+        Write-Host "`n:: Packaging..." -ForegroundColor Gray
+        mkdir ".\dist\$app_name" | Out-Null
+        foreach ($item in @("dist\$app_name`.exe", 'assets', 'README.md', 'build.ps1', 'install.ps1', 'uninstall.ps1')) {
+            (Get-Item $item).FullName | ForEach-Object { Copy-Item $_ ".\dist\$($app_name)" -Force -Recurse }
+        }
+        Add-Type -AssemblyName "system.io.compression.filesystem"
+        $source_dir = Join-Path $PSScriptRoot "dist\$app_name"
+        $output_zip = Join-Path $PSScriptRoot "$app_name`.zip"
+        [io.compression.zipfile]::CreateFromDirectory($source_dir, $output_zip, "Optimal", $false)
     }
-    Add-Type -AssemblyName "system.io.compression.filesystem"
-    $source_dir = Join-Path $PSScriptRoot "dist\$app_name"
-    $output_zip = Join-Path $PSScriptRoot "$app_name`.zip"
-    [io.compression.zipfile]::CreateFromDirectory($source_dir, $output_zip, "Optimal", $false)
-    Copy-Item "dist\$app_name`.exe" $PSScriptRoot -Force
+
+    Move-Item "dist\$app_name`.exe" $PSScriptRoot -Force
     Write-Host "BUILD FINISHED" -ForegroundColor Green
 }
 catch {
