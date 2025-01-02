@@ -48,7 +48,7 @@ try {
     if ( $package ) {
         Write-Host "`n:: Packaging..." -ForegroundColor Gray
         mkdir ".\dist\$app_name" | Out-Null
-        foreach ($item in @("dist\$app_name`.exe", 'assets', 'README.md', 'build.ps1', 'install.ps1', 'uninstall.ps1')) {
+        foreach ($item in @("dist\$app_name`.exe", 'assets', 'README.md', 'install.ps1', 'uninstall.ps1')) {
             (Get-Item $item).FullName | ForEach-Object { Copy-Item $_ ".\dist\$($app_name)" -Force -Recurse }
         }
         Add-Type -AssemblyName "system.io.compression.filesystem"
