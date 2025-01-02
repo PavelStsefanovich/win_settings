@@ -2,9 +2,10 @@ from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PySide6.QtGui import QAction, QIcon
 import sys
 import subprocess
-    
+
 def open_settings(setting):
-    subprocess.Popen(["cmd", "/c", f'start ms-settings:{setting}'])
+    command = f'start ms-settings:{setting}'
+    subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-NoLogo", "-WindowStyle", "Hidden", "-Command", command], shell=True)#, capture_output=True)
 
 def main():
     app = QApplication(sys.argv)
