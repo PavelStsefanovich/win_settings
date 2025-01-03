@@ -81,6 +81,7 @@ function _request_consent {
 
 $ErrorActionPreference = 'Stop'
 $app_name = 'WinSettingsShortcuts'
+$uninstall_key = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$app_name"
 
 _newline
 _info "Installation directory : $PSScriptRoot"
@@ -103,7 +104,7 @@ catch {
 }
 
 $task_name = "$app_name`_StartAtLogon_$env:USERNAME"
-$action = New-ScheduledTaskAction -Execute $executable_path
+$action = New-ScheduledTaskAction -Execute $executable_path -WorkingDirectory $PSScriptRoot
 $settings = New-ScheduledTaskSettingsSet -Compatibility Win8 `
     -AllowStartIfOnBatteries `
     -DontStopIfGoingOnBatteries `
@@ -139,8 +140,18 @@ Register-ScheduledTask $task_name -InputObject $task | Out-Null
 # create application shortcut
 $objShell = New-Object -ComObject ("WScript.Shell")
 $objShortCut = $objShell.CreateShortcut((Join-Path $env:USERPROFILE "Start Menu\Programs\$app_name`.lnk"))
-$objShortCut.TargetPath = $task.Actions.Execute
+$objShortCut.TargetPath = $executable_path
+$objShortCut.WorkingDirectory = $PSScriptRoot
 $objShortCut.Save()
+
+# create registry entry for uninstallation
+$favicon_path = Join-Path $PSScriptRoot 'assets\favicon-blue.ico'
+$uninstall_script_path = Join-Path (Split-Path $executable_path) 'uninstall.ps1'
+$uninstall_string = "powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File `"$uninstall_script_path`""
+New-Item $uninstall_key -Force | Out-Null
+New-ItemProperty $uninstall_key -Name DisplayName -PropertyType String -Value $app_name -Force | Out-Null
+New-ItemProperty $uninstall_key -Name DisplayIcon -PropertyType String -Value $favicon_path -Force | Out-Null
+New-ItemProperty $uninstall_key -Name UninstallString -PropertyType String -Value $uninstall_string -Force | Out-Null
 
 # status message
 _newline

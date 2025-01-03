@@ -81,6 +81,7 @@ function _request_consent {
 
 $ErrorActionPreference = 'Stop'
 $app_name = 'WinSettingsShortcuts'
+$uninstall_key = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$app_name"
 
 _newline
 $installed_task = Get-ScheduledTask "$app_name`_StartAtLogon_$env:USERNAME" -ErrorAction SilentlyContinue
@@ -90,7 +91,7 @@ if ($installed_task) {
     _newline
     _info "Found scheduled task '$($installed_task.TaskName)'."
     _info "  executable path : $($installed_task.Actions.Execute)"
-    
+
     _newline
     if (_request_consent "Do you want to uninstall this application?") {
         _info "Uninstalling..."
@@ -98,6 +99,9 @@ if ($installed_task) {
 
         # remove application shortcut
         Remove-Item (Join-Path $env:USERPROFILE "Start Menu\Programs\$app_name`.lnk") -Force
+
+        # remove registry entry
+        Get-Item $uninstall_key | Remove-Item -Force
 
         _newline
         _confirm_status "Uninstall complete"
